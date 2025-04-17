@@ -1,4 +1,3 @@
-
 import { ArrowLeft, Download, Clock, Star, Heart, Share2, Play, ExternalLink, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useParams } from "react-router-dom";
@@ -16,7 +15,6 @@ const MovieDetails = () => {
   const [isPlayerOpen, setIsPlayerOpen] = useState(false);
   const { defaultPlayer } = usePlayerSettings();
   
-  // Mock movie data - in a real app this would come from an API
   const movie = {
     id,
     title: "Cosmic Journey",
@@ -35,8 +33,7 @@ const MovieDetails = () => {
       speed: "3.2 MB/s",
       eta: "15 minutes"
     },
-    // Added fields for video sources
-    videoSource: "/sample-video.mp4", // This would be a real file path in production
+    videoSource: "/sample-video.mp4",
     isDownloaded: true,
     filePath: "/movies/Cosmic Journey (2023)/Cosmic.Journey.2023.1080p.mkv"
   };
@@ -50,11 +47,14 @@ const MovieDetails = () => {
   };
   
   const playInVLC = () => {
-    // In a real implementation, this would use Electron's shell.openExternal
-    // or a custom protocol handler to open VLC with the file
-    const vlcUrl = `vlc://${movie.filePath}`;
-    window.open(vlcUrl, '_blank');
-    toast.success(`Opening ${movie.title} in VLC player`);
+    if (window.electron && typeof window.electron.openExternal === 'function') {
+      window.electron.openExternal(`vlc://${movie.filePath}`);
+      toast.success(`Opening ${movie.title} in VLC player`);
+    } else {
+      const vlcUrl = `vlc://${movie.filePath}`;
+      window.open(vlcUrl, '_blank');
+      toast.success(`Attempting to open ${movie.title} in VLC player`);
+    }
   };
   
   const playInDefaultPlayer = () => {
@@ -63,7 +63,6 @@ const MovieDetails = () => {
     } else if (defaultPlayer === 'vlc') {
       playInVLC();
     } else if (defaultPlayer === 'jellyfin') {
-      // In a real implementation, this would redirect to the Jellyfin web UI
       toast.success(`Opening ${movie.title} in Jellyfin`);
     } else {
       openPlayer();

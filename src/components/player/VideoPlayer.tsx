@@ -1,4 +1,3 @@
-
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -118,12 +117,10 @@ export function VideoPlayer({ src, poster, title, onClose, autoPlay = false }: V
   };
   
   const openInExternalPlayer = () => {
-    if (window.electron) {
-      // This would be an integration with Electron for desktop apps
+    if (window.electron && typeof window.electron.openExternal === 'function') {
       window.electron.openExternal(src);
       toast.success("Opening in external player");
     } else {
-      // Fallback for web - attempt to open VLC web protocol
       const vlcUrl = `vlc://${src}`;
       window.open(vlcUrl, '_blank');
       toast.info("Attempting to open in VLC player");
