@@ -18,6 +18,10 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				orbitron: ['Orbitron', 'sans-serif'],
+				inter: ['Inter', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -51,6 +55,18 @@ export default {
 				card: {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
+				},
+				cosmic: {
+					DEFAULT: '#1A1F2C',
+					foreground: '#F4F7FF',
+					pink: {
+						light: '#FF719A',
+						DEFAULT: '#D946EF', 
+						dark: '#9C1EB8'
+					},
+					accent: '#FFDEE2',
+					stars: '#FFFFFF',
+					shadow: 'rgba(0, 0, 0, 0.5)'
 				},
 				sidebar: {
 					DEFAULT: 'hsl(var(--sidebar-background))',
