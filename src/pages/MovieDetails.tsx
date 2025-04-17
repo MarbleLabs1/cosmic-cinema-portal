@@ -1,14 +1,20 @@
 
-import { ArrowLeft, Download, Clock, Star, Heart, Share2, Play } from "lucide-react";
+import { ArrowLeft, Download, Clock, Star, Heart, Share2, Play, ExternalLink, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { VideoPlayer } from "@/components/player/VideoPlayer";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { usePlayerSettings } from "@/hooks/usePlayerSettings";
 
 const MovieDetails = () => {
   const { id } = useParams();
   const [isInWatchlist, setIsInWatchlist] = useState(false);
+  const [isPlayerOpen, setIsPlayerOpen] = useState(false);
+  const { defaultPlayer } = usePlayerSettings();
   
   // Mock movie data - in a real app this would come from an API
   const movie = {
@@ -28,6 +34,39 @@ const MovieDetails = () => {
       progress: 68,
       speed: "3.2 MB/s",
       eta: "15 minutes"
+    },
+    // Added fields for video sources
+    videoSource: "/sample-video.mp4", // This would be a real file path in production
+    isDownloaded: true,
+    filePath: "/movies/Cosmic Journey (2023)/Cosmic.Journey.2023.1080p.mkv"
+  };
+  
+  const openPlayer = () => {
+    setIsPlayerOpen(true);
+  };
+  
+  const closePlayer = () => {
+    setIsPlayerOpen(false);
+  };
+  
+  const playInVLC = () => {
+    // In a real implementation, this would use Electron's shell.openExternal
+    // or a custom protocol handler to open VLC with the file
+    const vlcUrl = `vlc://${movie.filePath}`;
+    window.open(vlcUrl, '_blank');
+    toast.success(`Opening ${movie.title} in VLC player`);
+  };
+  
+  const playInDefaultPlayer = () => {
+    if (defaultPlayer === 'builtin') {
+      openPlayer();
+    } else if (defaultPlayer === 'vlc') {
+      playInVLC();
+    } else if (defaultPlayer === 'jellyfin') {
+      // In a real implementation, this would redirect to the Jellyfin web UI
+      toast.success(`Opening ${movie.title} in Jellyfin`);
+    } else {
+      openPlayer();
     }
   };
   
@@ -84,10 +123,23 @@ const MovieDetails = () => {
               </div>
               
               <div className="flex flex-wrap gap-2">
-                <Button className="cosmic-gradient">
+                <Button 
+                  className="cosmic-gradient"
+                  onClick={playInDefaultPlayer}
+                >
                   <Play className="mr-2 h-4 w-4" />
                   Watch Now
                 </Button>
+                
+                <Button 
+                  variant="outline" 
+                  className="border-cosmic-pink/30 hover:bg-cosmic-pink/10"
+                  onClick={playInVLC}
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  Open in VLC
+                </Button>
+                
                 <Button variant="outline" className="border-cosmic-pink/30 hover:bg-cosmic-pink/10"
                   onClick={() => setIsInWatchlist(!isInWatchlist)}>
                   <Heart className={`mr-2 h-4 w-4 ${isInWatchlist ? 'fill-cosmic-pink text-cosmic-pink' : ''}`} />
@@ -147,6 +199,22 @@ const MovieDetails = () => {
                   Pause
                 </Button>
               </div>
+            ) : movie.isDownloaded ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-cosmic-pink/10 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <Monitor className="h-4 w-4 text-cosmic-pink" />
+                    <div>
+                      <p className="text-sm font-medium">Ready to Watch</p>
+                      <p className="text-xs text-muted-foreground">{movie.filePath.split('/').pop()}</p>
+                    </div>
+                  </div>
+                </div>
+                <Button className="cosmic-gradient w-full" onClick={playInDefaultPlayer}>
+                  <Play className="mr-2 h-4 w-4" />
+                  Play
+                </Button>
+              </div>
             ) : (
               <Button className="cosmic-gradient w-full">
                 <Download className="mr-2 h-4 w-4" />
@@ -169,6 +237,22 @@ const MovieDetails = () => {
           </div>
         </div>
       </div>
+      
+      <Dialog open={isPlayerOpen} onOpenChange={setIsPlayerOpen}>
+        <DialogContent className="max-w-6xl h-[80vh] p-0 bg-cosmic border border-cosmic-pink/20">
+          {isPlayerOpen && (
+            <div className="w-full h-full">
+              <VideoPlayer 
+                src={movie.videoSource} 
+                poster={movie.backdrop} 
+                title={movie.title}
+                onClose={closePlayer}
+                autoPlay
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

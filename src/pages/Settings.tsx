@@ -9,7 +9,8 @@ import {
   Shield, 
   MonitorSmartphone, 
   Download,
-  FolderOpen
+  FolderOpen,
+  Play
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Link } from "react-router-dom";
+import qBittorrentService from "@/services/qBittorrentService";
+import { toast } from "sonner";
 
 const SettingsCard = ({ title, description, children, footer }: any) => {
   return (
@@ -41,6 +45,45 @@ const Settings = () => {
   const [isAutomaticDownloadsEnabled, setIsAutomaticDownloadsEnabled] = useState(true);
   const [isLibraryMonitoringEnabled, setIsLibraryMonitoringEnabled] = useState(true);
   const [isNotificationsEnabled, setIsNotificationsEnabled] = useState(true);
+  
+  // Get qBittorrent config
+  const [qbtConfig, setQbtConfig] = useState(qBittorrentService.getConfig());
+  
+  const handleHostChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQbtConfig({ ...qbtConfig, host: e.target.value });
+  };
+  
+  const handlePortChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQbtConfig({ ...qbtConfig, port: parseInt(e.target.value) || 8080 });
+  };
+  
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQbtConfig({ ...qbtConfig, username: e.target.value });
+  };
+  
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setQbtConfig({ ...qbtConfig, password: e.target.value });
+  };
+  
+  const handleSaveConnection = () => {
+    qBittorrentService.saveConfig(qbtConfig);
+    toast.success("qBittorrent connection settings saved");
+  };
+  
+  const handleTestConnection = async () => {
+    qBittorrentService.saveConfig(qbtConfig);
+    await qBittorrentService.testConnection();
+  };
+  
+  const handleDiscoverMedia = async () => {
+    toast.info("Scanning for media in qBittorrent downloads...");
+    try {
+      const { movies, tvShows } = await qBittorrentService.discoverMedia();
+      toast.success(`Found ${movies.length} movies and ${tvShows.length} TV shows`);
+    } catch (error) {
+      toast.error("Failed to discover media. Check your qBittorrent connection.");
+    }
+  };
   
   return (
     <div className="space-y-6">
@@ -129,6 +172,15 @@ const Settings = () => {
                   onCheckedChange={setIsNotificationsEnabled}
                 />
               </div>
+              
+              <div className="border-t border-cosmic-pink/10 pt-4 mt-4">
+                <Link to="/settings/player">
+                  <Button className="w-full cosmic-gradient">
+                    <Play className="h-4 w-4 mr-2" />
+                    Player Settings
+                  </Button>
+                </Link>
+              </div>
             </div>
           </SettingsCard>
           
@@ -172,11 +224,19 @@ const Settings = () => {
             description="Configure connection to qBittorrent"
             footer={
               <div className="flex gap-2">
-                <Button variant="outline">
+                <Button 
+                  variant="outline" 
+                  onClick={handleTestConnection}
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Test Connection
                 </Button>
-                <Button className="cosmic-gradient">Save Connection</Button>
+                <Button 
+                  className="cosmic-gradient"
+                  onClick={handleSaveConnection}
+                >
+                  Save Connection
+                </Button>
               </div>
             }
           >
@@ -186,7 +246,8 @@ const Settings = () => {
                   <Label htmlFor="qbt-host">Host</Label>
                   <Input
                     id="qbt-host"
-                    defaultValue="http://localhost"
+                    value={qbtConfig.host}
+                    onChange={handleHostChange}
                     className="bg-cosmic/50 border-cosmic-pink/20 focus-visible:ring-cosmic-pink"
                   />
                 </div>
@@ -195,7 +256,8 @@ const Settings = () => {
                   <Label htmlFor="qbt-port">Port</Label>
                   <Input
                     id="qbt-port"
-                    defaultValue="8080"
+                    value={qbtConfig.port}
+                    onChange={handlePortChange}
                     className="bg-cosmic/50 border-cosmic-pink/20 focus-visible:ring-cosmic-pink"
                   />
                 </div>
@@ -206,7 +268,8 @@ const Settings = () => {
                   <Label htmlFor="qbt-username">Username</Label>
                   <Input
                     id="qbt-username"
-                    defaultValue="admin"
+                    value={qbtConfig.username}
+                    onChange={handleUsernameChange}
                     className="bg-cosmic/50 border-cosmic-pink/20 focus-visible:ring-cosmic-pink"
                   />
                 </div>
@@ -216,7 +279,8 @@ const Settings = () => {
                   <Input
                     id="qbt-password"
                     type="password"
-                    defaultValue="password"
+                    value={qbtConfig.password}
+                    onChange={handlePasswordChange}
                     className="bg-cosmic/50 border-cosmic-pink/20 focus-visible:ring-cosmic-pink"
                   />
                 </div>
@@ -334,7 +398,10 @@ const Settings = () => {
             description="Scan your libraries for new content"
             footer={
               <div className="flex gap-2">
-                <Button className="bg-cosmic-pink hover:bg-cosmic-pink-dark text-white">
+                <Button 
+                  className="bg-cosmic-pink hover:bg-cosmic-pink-dark text-white"
+                  onClick={handleDiscoverMedia}
+                >
                   <RefreshCw className="h-4 w-4 mr-2" />
                   Scan Library Now
                 </Button>
